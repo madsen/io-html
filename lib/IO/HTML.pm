@@ -105,9 +105,12 @@ sub sniff_encoding
 
   $filename = 'file' unless defined $filename;
 
+  my $pos = tell $in;
+  croak "Could not seek $filename: $!" if $pos < 0;
+
   croak "Could not read $filename: $!" unless defined read $in, my $buf, 1024;
 
-  seek $in, 0, 0 or croak "Could not seek $filename: $!"; # return to beginning
+  seek $in, $pos, 0 or croak "Could not seek $filename: $!";
 
 =diag C<< Could not read %s: %s >>
 
@@ -122,13 +125,13 @@ The specified file could not be rewound for the reason specified by C<$!>.
   # Check for BOM:
   my $encoding = do {
     if ($buf =~ /^\xFe\xFF/) {
-      seek $in, 2, 0;
+      seek $in, 2, 1;
       'UTF-16BE';
     } elsif ($buf =~ /^\xFF\xFe/) {
-      seek $in, 2, 0;
+      seek $in, 2, 1;
       'UTF-16LE';
     } elsif ($buf =~ /^\xEF\xBB\xBF/) {
-      seek $in, 3, 0;
+      seek $in, 3, 1;
       'utf-8-strict';
     } else {
       find_charset_in($buf);    # check for <meta charset>
