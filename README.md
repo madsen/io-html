@@ -1,7 +1,7 @@
 IO-HTML
 =======
 
-IO-HTML is a Perl module that NEEDS A DESCRIPTION.
+IO-HTML is a Perl module that opens a file and performs automatic charset detection based on the HTML5 algorithm.
 
 This is a Git repository where development of IO-HTML takes place.  For more information, visit [IO-HTML on CPAN](http://search.cpan.org/dist/IO-HTML/).
 
