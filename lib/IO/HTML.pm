@@ -24,7 +24,6 @@ use warnings;
 use Carp 'croak';
 use Encode 'find_encoding';
 use Exporter 5.57 'import';
-use IO::File ();
 
 our $VERSION = '0.01';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
@@ -149,32 +148,31 @@ The specified file could not be rewound for the reason specified by C<$!>.
 # Get attribute from current position of $_
 sub _get_attribute
 {
-  /\G[\x09\x0A\x0C\x0D\x20\x2F]+/gc; # skip whitespace or /
+  m!\G[\x09\x0A\x0C\x0D /]+!gc; # skip whitespace or /
 
-  return if /\G>/gc or /\G\z/gc;
-
-  /\G(=?[^\x09\x0A\x0C\x0D\x20=]*)/gc;
+  return if /\G>/gc or not /\G(=?[^\x09\x0A\x0C\x0D =]*)/gc;
 
   my ($name, $value) = (lc $1, '');
 
-  if (/\G[\x09\x0A\x0C\x0D\x20]*=[\x09\x0A\x0C\x0D\x20]*/gc
+  if (/\G[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/gc
       and (/\G"([^"]*)"?/gc or
            /\G'([^']*)'?/gc or
-           /\G([^\x09\x0A\x0C\x0D\x20>]*)/gc)) {
+           /\G([^\x09\x0A\x0C\x0D >]*)/gc)) {
     $value = lc $1;
-  }
+  } # end if attribute has value
 
   return wantarray ? ($name, $value) : 1;
 } # end _get_attribute
 
+# Examine a meta value for a charset:
 sub _get_charset_from_meta
 {
   local $_ = shift;
 
-  while (/charset[\x09\x0A\x0C\x0D\x20]*=[\x09\x0A\x0C\x0D\x20]*/ig) {
+  while (/charset[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/ig) {
     return $1 if (/\G"([^"]*)"/gc or
                   /\G'([^']*)'/gc or
-                  /\G(?!['"])([^\x09\x0A\x0C\x0D\x20;]+)/gc);
+                  /\G(?!['"])([^\x09\x0A\x0C\x0D ;]+)/gc);
   }
 
   return undef;
@@ -200,14 +198,15 @@ sub find_charset_in
 {
   local $_ = shift;
 
-  while (not /\G\z/gc) {
+  (pos) = 0;
+  while ((pos) < length) {
     if (/\G<!--.*?(?<=--)>/sgc) {
       # Skip comment
     }
-    elsif (/\G<meta(?=[\x09\x0A\x0C\x0D\x20\x2F])/gic) {
+    elsif (m!\G<meta(?=[\x09\x0A\x0C\x0D /])!gic) {
       my ($got_pragma, $need_pragma, $charset);
 
-      while (my ($name, $value) = _get_attribute) {
+      while (my ($name, $value) = &_get_attribute) {
         if ($name eq 'http-equiv' and $value eq 'content-type') {
           $got_pragma = 1;
         } elsif ($name eq 'content' and not defined $charset) {
@@ -226,7 +225,7 @@ sub find_charset_in
       } # end if found charset
     } # end elsif <meta
     elsif (m!\G</?[a-zA-Z][^\x09\x0A\x0C\x0D >]*!gc) {
-      1 while _get_attribute;
+      1 while &_get_attribute;
     }
     elsif (m{\G<[!/?][^>]*}gc) {
       # skip unwanted things

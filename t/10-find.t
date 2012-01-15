@@ -13,7 +13,7 @@ use Test::More 0.88;            # done_testing
 
 use IO::HTML 'find_charset_in';
 
-plan tests => 10;
+plan tests => 15;
 
 sub test
 {
@@ -42,6 +42,11 @@ test 'iso-8859-15' => <<'';
 <meta charset =
  "ISO-8859-15">
 
+test 'utf-8-strict' => <<'';
+<meta foo=bar some=" charset =
+ "ISO-8859-15">
+<meta charset="UTF-8">
+
 test 'cp1252' => <<'';
 <meta charset="Windows-1252">
 
@@ -64,5 +69,28 @@ test 'iso-8859-15' => <<'';
 <head><!-- somebody forgot the quotes -->
 <meta http-equiv=Content-Type content=text/html; charset=ISO-8859-15 />
 <title>Title</title>
+
+test 'iso-8859-15' => <<'';
+<html>
+<head><!-- somebody forgot the quotes -->
+<meta http-equiv
+=Content-Type content=text/html; charset=ISO-8859-15 />
+<title>Title</title>
+
+test 'iso-8859-15' => <<'';
+<html>
+<head><!-- different order -->
+<meta content=text/html; charset=ISO-8859-15 http-equiv=Content-Type>
+<title>Title</title>
+
+test 'cp1252' => <<'';
+<html>
+<head>
+<meta content="text/html;charset=ISO-8859-1" http-equiv=Content-Type>
+<title>Title</title>
+
+test undef, <<'', 'incomplete attribute';
+<html>
+<foo href="c06.
 
 done_testing;
