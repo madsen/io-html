@@ -157,7 +157,7 @@ sub _get_attribute
 
   my ($name, $value) = (lc $1, '');
 
-  if (/\G[\x09\x0A\x0C\x0D\x20]*=/gc
+  if (/\G[\x09\x0A\x0C\x0D\x20]*=[\x09\x0A\x0C\x0D\x20]*/gc
       and (/\G"([^"]*)"?/gc or
            /\G'([^']*)'?/gc or
            /\G([^\x09\x0A\x0C\x0D\x20>]*)/gc)) {

@@ -13,7 +13,7 @@ use Test::More 0.88;            # done_testing
 
 use IO::HTML 'find_charset_in';
 
-plan tests => 7;
+plan tests => 10;
 
 sub test
 {
@@ -31,6 +31,16 @@ test 'utf-8-strict' => <<'';
 test 'utf-8-strict' => <<'';
 <!-- UTF-16 is recognized only with a BOM -->
 <meta charset="UTF-16BE">
+
+test 'iso-8859-15' => <<'';
+<meta charset ="ISO-8859-15">
+
+test 'iso-8859-15' => <<'';
+<meta charset= "ISO-8859-15">
+
+test 'iso-8859-15' => <<'';
+<meta charset =
+ "ISO-8859-15">
 
 test 'cp1252' => <<'';
 <meta charset="Windows-1252">
