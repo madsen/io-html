@@ -119,6 +119,16 @@ C<undef> if the encoding cannot be determined.  C<$bom> is true if the
 file began with a byte order mark.  In scalar context, it returns only
 C<$encoding>.
 
+Tip: If you want to run C<sniff_encoding> on a file you've already
+loaded into a string, open an in-memory file on the string, and pass
+that handle:
+
+  ($encoding, $bom) = do {
+    open(my $fh, '<:raw', \$string);  sniff_encoding($fh)
+  };
+
+(This only makes sense if C<utf8::is_utf8($string)> is false.)
+
 =cut
 
 sub sniff_encoding
@@ -204,13 +214,13 @@ sub _get_attribute
 # Examine a meta value for a charset:
 sub _get_charset_from_meta
 {
-  local $_ = shift;
-
-  while (/charset[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/ig) {
-    return $1 if (/\G"([^"]*)"/gc or
-                  /\G'([^']*)'/gc or
-                  /\G(?!['"])([^\x09\x0A\x0C\x0D ;]+)/gc);
-  }
+  for (shift) {
+    while (/charset[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/ig) {
+      return $1 if (/\G"([^"]*)"/gc or
+                    /\G'([^']*)'/gc or
+                    /\G(?!['"])([^\x09\x0A\x0C\x0D ;]+)/gc);
+    }
+  } # end for value
 
   return undef;
 } # end _get_charset_from_meta
@@ -223,6 +233,7 @@ sub _get_charset_from_meta
 This function (exported only by request) looks for charset information
 in a C<< <meta> >> tag in a possibly incomplete HTML document using
 the "two step" algorithm specified by HTML5.  It does not look for a BOM.
+Only the first 1024 bytes of the string are checked.
 
 It returns Perl's canonical name for the encoding, which is not
 necessarily the same as the MIME or IANA charset name.  It returns
@@ -233,47 +244,47 @@ recognized by the Encode module.
 
 sub find_charset_in
 {
-  local $_ = shift;
+  for (shift) {
+    my $stop = length > 1024 ? 1024 : length; # search first 1024 bytes
 
-  (pos) = 0;
-  while ((pos) < length) {
-    if (/\G<!--.*?(?<=--)>/sgc) {
-      # Skip comment
-    }
-    elsif (m!\G<meta(?=[\x09\x0A\x0C\x0D /])!gic) {
-      my ($got_pragma, $need_pragma, $charset);
+    pos() = 0;
+    while (pos() < $stop) {
+      if (/\G<!--.*?(?<=--)>/sgc) {
+      } # Skip comment
+      elsif (m!\G<meta(?=[\x09\x0A\x0C\x0D /])!gic) {
+        my ($got_pragma, $need_pragma, $charset);
 
-      while (my ($name, $value) = &_get_attribute) {
-        if ($name eq 'http-equiv' and $value eq 'content-type') {
-          $got_pragma = 1;
-        } elsif ($name eq 'content' and not defined $charset) {
-          $need_pragma = 1 if defined($charset = _get_charset_from_meta($value));
-        } elsif ($name eq 'charset') {
-          $charset = $value;
-          $need_pragma = 0;
-        }
-      } # end while more attributes
+        while (my ($name, $value) = &_get_attribute) {
+          if ($name eq 'http-equiv' and $value eq 'content-type') {
+            $got_pragma = 1;
+          } elsif ($name eq 'content' and not defined $charset) {
+            $need_pragma = 1
+                if defined($charset = _get_charset_from_meta($value));
+          } elsif ($name eq 'charset') {
+            $charset = $value;
+            $need_pragma = 0;
+          }
+        } # end while more attributes in this <meta> tag
 
-      if (defined $need_pragma and (not $need_pragma or $got_pragma)) {
-        return 'utf-8-strict' if $charset =~ /^utf-?16/;
-        return 'cp1252'       if $charset eq 'iso-8859-1'; # people lie
-        my $encoding = find_encoding($charset);
-        return $encoding->name if $encoding;
-      } # end if found charset
-    } # end elsif <meta
-    elsif (m!\G</?[a-zA-Z][^\x09\x0A\x0C\x0D >]*!gc) {
-      1 while &_get_attribute;
-    }
-    elsif (m{\G<[!/?][^>]*}gc) {
-      # skip unwanted things
-    }
-    elsif (m/\G</gc) {
-      # skip < that doesn't open anything we recognize
-    }
+        if (defined $need_pragma and (not $need_pragma or $got_pragma)) {
+          return 'utf-8-strict' if $charset =~ /^utf-?16/;
+          return 'cp1252'       if $charset eq 'iso-8859-1'; # people lie
+          my $encoding = find_encoding($charset);
+          return $encoding->name if $encoding;
+        } # end if found charset
+      } # end elsif <meta
+      elsif (m!\G</?[a-zA-Z][^\x09\x0A\x0C\x0D >]*!gc) {
+        1 while &_get_attribute;
+      } # end elsif some other tag
+      elsif (m{\G<[!/?][^>]*}gc) {
+      } # skip unwanted things
+      elsif (m/\G</gc) {
+      } # skip < that doesn't open anything we recognize
 
-    # Advance to the next <:
-    m/\G[^<]+/gc;
-  } # end while not at end of string
+      # Advance to the next <:
+      m/\G[^<]+/gc;
+    } # end while not at search boundary
+  } # end for string
 
   return undef;                 # Couldn't find a charset
 } # end find_charset_in
