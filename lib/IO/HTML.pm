@@ -31,7 +31,7 @@ our $VERSION = '0.01';
 our $default_encoding ||= 'cp1252';
 
 our @EXPORT    = qw(html_file);
-our @EXPORT_OK = qw(find_charset_in sniff_encoding);
+our @EXPORT_OK = qw(find_charset_in html_file_and_encoding sniff_encoding);
 #=====================================================================
 
 =sub html_file
@@ -54,6 +54,26 @@ It dies if the file cannot be opened.
 
 sub html_file
 {
+  (&html_file_and_encoding)[0]; # return just the filehandle
+} # end html_file
+
+=sub html_file_and_encoding
+
+  ($filehandle, $encoding, $bom) = html_file_and_encoding($filename);
+
+This function (exported only by request) is just like C<html_file>,
+but returns more information.  In addition to the filehandle, it
+returns the name of the encoding used, and a flag indicating whether a
+byte order mark was found (if C<$bom> is true, the file began with a
+BOM).  This may be useful if you want to write the file out again.
+
+It dies if the file cannot be opened.  The result of calling it in
+scalar context is undefined.
+
+=cut
+
+sub html_file_and_encoding
+{
   my ($filename) = @_;
 
   open(my $in, '<:raw', $filename) or croak "Failed to open $filename: $!";
@@ -70,7 +90,7 @@ you set C<$IO::HTML::default_encoding> to C<undef>.
 
 =cut
 
-  my $encoding = sniff_encoding($in, $filename);
+  my ($encoding, $bom) = sniff_encoding($in, $filename);
 
   if (not defined $encoding) {
     croak "No default encoding specified"
@@ -79,13 +99,13 @@ you set C<$IO::HTML::default_encoding> to C<undef>.
 
   binmode $in, ":encoding($encoding):crlf";
 
-  return $in;
-} # end html_file
+  return ($in, $encoding, $bom);
+} # end html_file_and_encoding
 #---------------------------------------------------------------------
 
 =sub sniff_encoding
 
-  $encoding = sniff_encoding($filehandle, $filename);
+  ($encoding, $bom) = sniff_encoding($filehandle, $filename);
 
 This function (exported only by request) runs the HTML5 encoding
 sniffing algorithm on C<$filehandle> (which must be seekable, and
@@ -95,7 +115,9 @@ defaults to "file" if omitted.
 
 It returns Perl's canonical name for the encoding, which is not
 necessarily the same as the MIME or IANA charset name.  It returns
-C<undef> if the encoding cannot be determined.
+C<undef> if the encoding cannot be determined.  C<$bom> is true if the
+file began with a byte order mark.  In scalar context, it returns only
+C<$encoding>.
 
 =cut
 
@@ -123,22 +145,27 @@ The specified file could not be rewound for the reason specified by C<$!>.
 =cut
 
   # Check for BOM:
+  my $bom;
   my $encoding = do {
     if ($buf =~ /^\xFe\xFF/) {
-      seek $in, 2, 1;
+      $bom = 2;
       'UTF-16BE';
     } elsif ($buf =~ /^\xFF\xFe/) {
-      seek $in, 2, 1;
+      $bom = 2;
       'UTF-16LE';
     } elsif ($buf =~ /^\xEF\xBB\xBF/) {
-      seek $in, 3, 1;
+      $bom = 3;
       'utf-8-strict';
     } else {
       find_charset_in($buf);    # check for <meta charset>
     }
   }; # end $encoding
 
-  if (not defined $encoding) { # try decoding as UTF-8
+  if ($bom) {
+    seek $in, $bom, 1 or croak "Could not seek $filename: $!";
+    $bom = 1;
+  }
+  elsif (not defined $encoding) { # try decoding as UTF-8
     my $test = decode('utf-8-strict', $buf, Encode::FB_QUIET);
     if ($buf =~ /^(?:                   # nothing left over
          | [\xC2-\xDF]                  # incomplete 2-byte char
@@ -149,7 +176,7 @@ The specified file could not be rewound for the reason specified by C<$!>.
     } # end if valid UTF-8 with at least one multi-byte character:
   } # end if testing for UTF-8
 
-  return $encoding;
+  return wantarray ? ($encoding, $bom) : $encoding;
 } # end sniff_encoding
 
 #=====================================================================
@@ -295,6 +322,38 @@ __END__
 IO::HTML provides an easy way to open a file containing HTML while
 automatically determining its encoding.  It uses the HTML5 encoding
 sniffing algorithm specified in section 8.2.2.1 of the draft standard.
+
+The algorithm as implemented here is:
+
+=over
+
+=item 1.
+
+If the file begins with a byte order mark indicating UTF-16LE,
+UTF-16BE, or UTF-8, then that is the encoding.
+
+=item 2.
+
+If the first 1024 bytes of the file contain a C<< <meta> >> tag that
+indicates the charset, and Encode recognizes the specified charset
+name, then that is the encoding.  (This portion of the algorithm is
+implemented by C<find_charset_in>.)
+
+=item 3.
+
+If the first 1024 bytes of the file are valid UTF-8 (with at least 1
+non-ASCII character), then the encoding is UTF-8.
+
+=item 4.
+
+If all else fails, use the default character encoding.  The HTML5
+standard suggests the default encoding should be locale dependent, but
+currently it is always C<cp1252> unless you set
+C<$IO::HTML::default_encoding> to a different value.  Note:
+C<sniff_encoding> does not apply this step; only C<html_file> does
+that.
+
+=back
 
 =for Pod::Loom-insert_after
 SUBROUTINES

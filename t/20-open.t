@@ -11,7 +11,7 @@ use warnings;
 
 use Test::More 0.88;
 
-plan tests => 19;
+plan tests => 28;
 
 use IO::HTML;
 use File::Temp;
@@ -35,15 +35,18 @@ sub test
   print $tmp $data;
   $tmp->close;
 
-  my $fh = html_file("$tmp");
+  my ($fh, $encoding, $bom) = IO::HTML::html_file_and_encoding("$tmp");
 
-  $expected = "encoding($expected)";
-  my @layers = PerlIO::get_layers($fh);
+  is($encoding, $expected, $name);
 
-  ok((grep { $_ eq $expected } @layers), $name)
-      or diag(map { "$_\n" } "Expected $expected, but got", @layers);
+  my $firstLine = <$fh>;
+  like($firstLine, qr/^<html/i);
 
-  like(<$fh>, qr/^<html/i);
+  close $fh;
+
+  $fh = html_file("$tmp");
+
+  is(<$fh>, $firstLine);
 
   close $fh;
 
