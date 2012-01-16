@@ -13,7 +13,7 @@ use Test::More 0.88;            # done_testing
 
 use IO::HTML 'find_charset_in';
 
-plan tests => 15;
+plan tests => 18;
 
 sub test
 {
@@ -92,5 +92,14 @@ test 'cp1252' => <<'';
 test undef, <<'', 'incomplete attribute';
 <html>
 <foo href="c06.
+
+test 'iso-8859-15' => <<'', 'short comment';
+<!--><meta charset="ISO-8859-15">-->
+
+test 'iso-8859-15' => <<'', 'strange comment';
+<!---><meta charset="ISO-8859-15">-->
+
+test undef, <<'', 'inside comment';
+<!-- ><meta charset="ISO-8859-15">-->
 
 done_testing;
