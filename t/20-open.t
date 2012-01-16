@@ -11,7 +11,7 @@ use warnings;
 
 use Test::More 0.88;
 
-plan tests => 15;
+plan tests => 19;
 
 use IO::HTML;
 use File::Temp;
@@ -77,5 +77,13 @@ test 'utf-8-strict' => ':utf8' => <<"";
 
 test 'UTF-16LE' => 'UTF-16LE' => <<"";
 \x{FeFF}<html><meta charset="UTF-16">
+
+test 'utf-8-strict' => ':utf8' =>
+  "<html><title>Foo\xA0Bar" . ("\x{2014}" x 512) . "</title>\n",
+  'UTF-8 character crosses boundary';
+
+test 'utf-8-strict' => ':utf8' =>
+  "<html><title>Foo Bar" . ("\x{2014}" x 512) . "</title>\n",
+  'UTF-8 character crosses boundary 2';
 
 done_testing;

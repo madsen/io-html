@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Carp 'croak';
-use Encode 'find_encoding';
+use Encode qw(decode find_encoding);
 use Exporter 5.57 'import';
 
 our $VERSION = '0.01';
@@ -138,9 +138,16 @@ The specified file could not be rewound for the reason specified by C<$!>.
     }
   }; # end $encoding
 
-  if (not defined $encoding and $buf =~ /[\x80-\xFF]/ and utf8::decode($buf)) {
-    $encoding = 'utf-8-strict';
-  } # end if valid UTF-8 with at least one multi-byte character:
+  if (not defined $encoding) { # try decoding as UTF-8
+    my $test = decode('utf-8-strict', $buf, Encode::FB_QUIET);
+    if ($buf =~ /^(?:                   # nothing left over
+         | [\xC2-\xDF]                  # incomplete 2-byte char
+         | [\xE0-\xEF] [\x80-\xBF]?     # incomplete 3-byte char
+         | [\xF0-\xF4] [\x80-\xBF]{0,2} # incomplete 4-byte char
+        )\z/x and $test =~ /[\x80-\x{10FFFF}]/) {
+      $encoding = 'utf-8-strict';
+    } # end if valid UTF-8 with at least one multi-byte character:
+  } # end if testing for UTF-8
 
   return $encoding;
 } # end sniff_encoding
