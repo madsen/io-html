@@ -39,8 +39,8 @@ our @EXPORT_OK = qw(find_charset_in html_file_and_encoding sniff_encoding);
   $filehandle = html_file($filename);
 
 This function (exported by default) is the primary entry point.  It
-opens the file specified by C<$filename> for reading and uses
-C<sniff_encoding> to apply a suitable encoding layer.
+opens the file specified by C<$filename> for reading, uses
+C<sniff_encoding> to find a suitable encoding layer, and applies it.
 
 If C<sniff_encoding> is unable to determine the encoding, it defaults
 to C<$IO::HTML::default_encoding>, which is set to C<cp1252>
@@ -181,7 +181,7 @@ The specified file could not be rewound for the reason specified by C<$!>.
          | [\xC2-\xDF]                  # incomplete 2-byte char
          | [\xE0-\xEF] [\x80-\xBF]?     # incomplete 3-byte char
          | [\xF0-\xF4] [\x80-\xBF]{0,2} # incomplete 4-byte char
-        )\z/x and $test =~ /[\x80-\x{10FFFF}]/) {
+        )\z/x and $test =~ /[^\x00-\x7F]/) {
       $encoding = 'utf-8-strict';
     } # end if valid UTF-8 with at least one multi-byte character:
   } # end if testing for UTF-8
@@ -365,6 +365,11 @@ C<sniff_encoding> does not apply this step; only C<html_file> does
 that.
 
 =back
+
+=head1 SEE ALSO
+
+The HTML5 specification, section 8.2.2.1 Determining the character encoding:
+L<http://www.w3.org/TR/html5/parsing.html#determining-the-character-encoding>
 
 =for Pod::Loom-insert_after
 SUBROUTINES
