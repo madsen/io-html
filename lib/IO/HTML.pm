@@ -41,6 +41,7 @@ our @EXPORT_OK = qw(find_charset_in html_file_and_encoding sniff_encoding);
 This function (exported by default) is the primary entry point.  It
 opens the file specified by C<$filename> for reading, uses
 C<sniff_encoding> to find a suitable encoding layer, and applies it.
+It also applies the C<:crlf> layer.
 
 If C<sniff_encoding> is unable to determine the encoding, it defaults
 to C<$IO::HTML::default_encoding>, which is set to C<cp1252>
