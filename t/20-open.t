@@ -33,7 +33,7 @@ sub test
   print $tmp $data;
   $tmp->close;
 
-  my ($fh, $encoding, $bom) = IO::HTML::html_file_and_encoding("$tmp");
+  my ($fh, $encoding, $bom) = IO::HTML::file_and_encoding("$tmp");
 
   is($encoding, $expected, $name);
 
