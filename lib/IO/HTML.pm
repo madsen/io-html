@@ -328,25 +328,6 @@ sub find_charset_in
 } # end find_charset_in
 
 #=====================================================================
-# Methods:
-#=====================================================================
-
-=method open
-
-  $filehandle = IO::HTML->open($filename);
-
-This is just another way to write C<html_file($filename)> for people
-who prefer an object-oriented interface.
-
-=cut
-
-sub open
-{
-  shift;                        # Discard class name
-  goto &html_file;
-} # end open
-
-#=====================================================================
 # Package Return Value:
 
 1;
@@ -408,7 +389,3 @@ that.
 
 The HTML5 specification, section 8.2.2.1 Determining the character encoding:
 L<http://www.w3.org/TR/html5/parsing.html#determining-the-character-encoding>
-
-=for Pod::Loom-insert_after
-SUBROUTINES
-METHODS

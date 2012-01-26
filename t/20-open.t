@@ -11,14 +11,12 @@ use warnings;
 
 use Test::More 0.88;
 
-plan tests => 28;
+plan tests => 27;
 
 use IO::HTML;
 use File::Temp;
 
 #---------------------------------------------------------------------
-my $tested_open_method;
-
 sub test
 {
   my ($expected, $out, $data, $name) = @_;
@@ -49,14 +47,6 @@ sub test
   is(<$fh>, $firstLine);
 
   close $fh;
-
-  # Just try the open method once:
-  unless ($tested_open_method) {
-    $tested_open_method = 1;
-
-    my $fh = IO::HTML->open("$tmp");
-    like(<$fh>, qr/^<html/i);
-  } # end unless $tested_open_method
 } # end test
 
 #---------------------------------------------------------------------
