@@ -33,6 +33,12 @@ our $default_encoding ||= 'cp1252';
 our @EXPORT    = qw(html_file);
 our @EXPORT_OK = qw(find_charset_in html_file_and_encoding html_outfile
                     sniff_encoding);
+
+our %EXPORT_TAGS = (
+  rw  => [qw( html_file html_file_and_encoding html_outfile )],
+  all => [ @EXPORT, @EXPORT_OK ],
+);
+
 #=====================================================================
 
 =sub html_file
@@ -326,6 +332,47 @@ sub find_charset_in
 
   return undef;                 # Couldn't find a charset
 } # end find_charset_in
+#---------------------------------------------------------------------
+
+=for Pod::Loom-insert_after
+SUBROUTINES
+EXPORTS
+
+=head1 EXPORTS
+
+By default, only C<html_file> is exported.  Other functions may be
+exported on request.
+
+For people who prefer not to export functions, all functions beginning
+with C<html_> have an alias without that prefix (e.g. you can call
+C<IO::HTML::file(...)> instead of C<IO::HTML::html_file(...)>.  These
+aliases are not exportable.
+
+=for Pod::Coverage
+file
+file_and_encoding
+outfile
+
+The following export tags are available:
+
+=over
+
+=item C<:all>
+
+All exportable functions.
+
+=item C<:rw>
+
+C<html_file>, C<html_file_and_encoding>, C<html_outfile>.
+
+=back
+
+=cut
+
+# Shortcuts for people who don't like exported functions:
+*file               = \&html_file;
+*file_and_encoding  = \&html_file_and_encoding;
+*outfile            = \&html_outfile;
 
 #=====================================================================
 # Package Return Value:
