@@ -31,7 +31,8 @@ our $VERSION = '0.01';
 our $default_encoding ||= 'cp1252';
 
 our @EXPORT    = qw(html_file);
-our @EXPORT_OK = qw(find_charset_in html_file_and_encoding sniff_encoding);
+our @EXPORT_OK = qw(find_charset_in html_file_and_encoding html_outfile
+                    sniff_encoding);
 #=====================================================================
 
 =sub html_file
@@ -66,12 +67,18 @@ This function (exported only by request) is just like C<html_file>,
 but returns more information.  In addition to the filehandle, it
 returns the name of the encoding used, and a flag indicating whether a
 byte order mark was found (if C<$bom> is true, the file began with a
-BOM).  This may be useful if you want to write the file out again.
+BOM).  This may be useful if you want to write the file out again
+(especially in conjunction with the C<html_outfile> function).
 
 It dies if the file cannot be opened.  The result of calling it in
 scalar context is undefined.
 
 =cut
+
+# Note: I made html_file and html_file_and_encoding separate functions
+# (instead of making html_file context-sensitive) because I wanted to
+# use html_file in function calls (i.e. list context) without having
+# to write "scalar html_file" all the time.
 
 sub html_file_and_encoding
 {
@@ -102,6 +109,36 @@ you set C<$IO::HTML::default_encoding> to C<undef>.
 
   return ($in, $encoding, $bom);
 } # end html_file_and_encoding
+#---------------------------------------------------------------------
+
+=sub html_outfile
+
+  $filehandle = html_outfile($filename, $encoding, $bom);
+
+This function (exported only by request) opens C<$filename> for output
+using C<$encoding>, and writes a BOM to it if C<$bom> is true.
+If C<$encoding> is C<undef>, it defaults to C<$IO::HTML::default_encoding>.
+
+It dies if the file cannot be opened.
+
+=cut
+
+sub html_outfile
+{
+  my ($filename, $encoding, $bom) = @_;
+
+  if (not defined $encoding) {
+    croak "No default encoding specified"
+        unless defined($encoding = $default_encoding);
+  } # end if we didn't find an encoding
+
+  open(my $out, ">:encoding($encoding)", $filename)
+      or croak "Failed to open $filename: $!";
+
+  print $out "\x{FeFF}" if $bom;
+
+  return $out;
+} # end html_outfile
 #---------------------------------------------------------------------
 
 =sub sniff_encoding
