@@ -272,7 +272,7 @@ sub _get_charset_from_meta
 
 =sub find_charset_in
 
-  $encoding = find_charset_in($string_containing_HTML);
+  $encoding = find_charset_in($string_containing_HTML, [\%options]);
 
 This function (exported only by request) looks for charset information
 in a C<< <meta> >> tag in a possibly incomplete HTML document using
@@ -284,12 +284,35 @@ necessarily the same as the MIME or IANA charset name.  It returns
 C<undef> if no charset is specified or if the specified charset is not
 recognized by the Encode module.
 
+The optional second argument is a hashref containing options.  The
+following keys are recognized:
+
+=over
+
+=item C<encoding>
+
+If true, return the L<Encode::Encoding> object instead of its name.
+Defaults to false.
+
+=item C<need_pragma>
+
+If true (the default), follow the HTML5 spec and examine the
+C<content> attribute only of C<< <meta http-equiv="Content-Type" >>.
+If set to 0, relax the HTML5 spec, and look for "charset=" in the
+C<content> attribute of I<every> meta tag.
+
+=back
+
 =cut
 
 sub find_charset_in
 {
   for (shift) {
+    my $options = shift || {};
     my $stop = length > 1024 ? 1024 : length; # search first 1024 bytes
+
+    my $expect_pragma = (defined $options->{need_pragma}
+                         ? $options->{need_pragma} : 1);
 
     pos() = 0;
     while (pos() < $stop) {
@@ -302,7 +325,7 @@ sub find_charset_in
           if ($name eq 'http-equiv' and $value eq 'content-type') {
             $got_pragma = 1;
           } elsif ($name eq 'content' and not defined $charset) {
-            $need_pragma = 1
+            $need_pragma = $expect_pragma
                 if defined($charset = _get_charset_from_meta($value));
           } elsif ($name eq 'charset') {
             $charset = $value;
@@ -311,10 +334,11 @@ sub find_charset_in
         } # end while more attributes in this <meta> tag
 
         if (defined $need_pragma and (not $need_pragma or $got_pragma)) {
-          return 'utf-8-strict' if $charset =~ /^utf-?16/;
-          return 'cp1252'       if $charset eq 'iso-8859-1'; # people lie
-          my $encoding = find_encoding($charset);
-          return $encoding->name if $encoding;
+          $charset = 'UTF-8'  if $charset =~ /^utf-?16/;
+          $charset = 'cp1252' if $charset eq 'iso-8859-1'; # people lie
+          if (my $encoding = find_encoding($charset)) {
+            return $options->{encoding} ? $encoding : $encoding->name;
+          } # end if charset is a recognized encoding
         } # end if found charset
       } # end elsif <meta
       elsif (m!\G</?[a-zA-Z][^\x09\x0A\x0C\x0D >]*!gc) {

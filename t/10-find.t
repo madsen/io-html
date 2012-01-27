@@ -10,18 +10,22 @@ use strict;
 use warnings;
 
 use Test::More 0.88;            # done_testing
+use Scalar::Util 'blessed';
 
 use IO::HTML 'find_charset_in';
 
-plan tests => 18;
+plan tests => 22;
 
 sub test
 {
-  my ($charset, $data, $name) = @_;
+  my $charset = shift;
+  my @data = shift;
+  push @data, shift if ref $_[0]; # options for find_charset_in
+  my $name = shift;
 
   local $Test::Builder::Level = $Test::Builder::Level + 1;
 
-  is(scalar find_charset_in($data), $charset, $name);
+  is(scalar find_charset_in(@data), $charset, $name);
 } # end test
 
 #---------------------------------------------------------------------
@@ -101,5 +105,25 @@ test 'iso-8859-15' => <<'', 'strange comment';
 
 test undef, <<'', 'inside comment';
 <!-- ><meta charset="ISO-8859-15">-->
+
+test undef, <<'', 'wrong pragma';
+<html>
+<head>
+<meta http-equiv="X-Content-Type" content="text/html; charset=UTF-8" />
+<title>Title</title>
+
+test 'utf-8-strict', <<'', {need_pragma => 0}, 'need_pragma 0';
+<html>
+<head>
+<meta http-equiv="X-Content-Type" content="text/html; charset=UTF-8" />
+<title>Title</title>
+
+{
+  my $encoding = find_charset_in('<meta charset="UTF-8">', { encoding => 1 });
+
+  ok(blessed($encoding), 'encoding is an object');
+
+  is(eval { $encoding->mime_name }, 'UTF-8', 'encoding is UTF-8');
+}
 
 done_testing;
