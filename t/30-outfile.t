@@ -11,9 +11,10 @@ use warnings;
 
 use Test::More 0.88;
 
-plan tests => 5;
+plan tests => 6;
 
 use IO::HTML ':rw';
+use Encode 'find_encoding';
 use File::Temp;
 
 #---------------------------------------------------------------------
@@ -21,7 +22,7 @@ sub test
 {
   my ($encoding, $bom, $expected) = @_;
 
-  my $name = $encoding;
+  my $name = ref $encoding ? $encoding->name . " object" : $encoding;
   $name .= ($bom ? ' with BOM' : ' without BOM') if defined $bom;
 
   local $Test::Builder::Level = $Test::Builder::Level + 1;
@@ -54,5 +55,7 @@ test cp1252 => undef, 'a097';
 test 'UTF-16BE', 1, 'feff00a02014';
 
 test 'UTF-16LE', 1, 'fffea0001420';
+
+test find_encoding('UTF-8'), 0, 'c2a0e28094';
 
 done_testing;

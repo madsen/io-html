@@ -11,10 +11,11 @@ use warnings;
 
 use Test::More 0.88;
 
-plan tests => 27;
+plan tests => 53;
 
 use IO::HTML;
 use File::Temp;
+use Scalar::Util 'blessed';
 
 #---------------------------------------------------------------------
 sub test
@@ -23,19 +24,27 @@ sub test
 
   local $Test::Builder::Level = $Test::Builder::Level + 1;
 
+  unless ($name) {
+    $name = 'test ' . ($expected || 'cp1252');
+  }
+
   my $tmp = File::Temp->new(UNLINK => 1);
+  open(my $mem, '>', \(my $buf)) or die;
 
   if ($out) {
     $out = ":encoding($out)" unless $out =~ /^:/;
     binmode $tmp, $out;
+    binmode $mem, $out;
   }
 
+  print $mem $data;
   print $tmp $data;
+  close $mem;
   $tmp->close;
 
   my ($fh, $encoding, $bom) = IO::HTML::file_and_encoding("$tmp");
 
-  is($encoding, $expected, $name);
+  is($encoding, $expected || 'cp1252', $name);
 
   my $firstLine = <$fh>;
   like($firstLine, qr/^<html/i);
@@ -47,6 +56,26 @@ sub test
   is(<$fh>, $firstLine);
 
   close $fh;
+
+  # Test sniff_encoding:
+  undef $mem;
+  open($mem, '<:raw', \$buf) or die;
+
+  ($encoding, $bom) = IO::HTML::sniff_encoding($mem);
+
+  is($encoding, $expected);
+
+  seek $mem, 0, 0;
+
+  ($encoding, $bom) = IO::HTML::sniff_encoding($mem, undef, { encoding => 1 });
+
+  if (defined $expected) {
+    ok(blessed($encoding), 'encoding is an object');
+
+    is(eval { $encoding->name }, $expected);
+  } else {
+    is($encoding, undef);
+  }
 } # end test
 
 #---------------------------------------------------------------------
@@ -56,7 +85,7 @@ test 'utf-8-strict' => '' => <<'';
 test 'utf-8-strict' => ':utf8' => <<"";
 <html><head><title>Foo\xA0Bar</title>
 
-test cp1252 => latin1 => <<"";
+test undef, latin1 => <<"";
 <html><head><title>Foo\xA0Bar</title>
 
 test 'UTF-16BE' => 'UTF-16BE' => <<"";

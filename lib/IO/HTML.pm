@@ -43,12 +43,15 @@ our %EXPORT_TAGS = (
 
 =sub html_file
 
-  $filehandle = html_file($filename);
+  $filehandle = html_file($filename, \%options);
 
 This function (exported by default) is the primary entry point.  It
 opens the file specified by C<$filename> for reading, uses
 C<sniff_encoding> to find a suitable encoding layer, and applies it.
 It also applies the C<:crlf> layer.
+
+The optional second argument is a hashref containing options.  The
+possible keys are described under C<find_charset_in>.
 
 If C<sniff_encoding> is unable to determine the encoding, it defaults
 to C<$IO::HTML::default_encoding>, which is set to C<cp1252>
@@ -67,7 +70,8 @@ sub html_file
 
 =sub html_file_and_encoding
 
-  ($filehandle, $encoding, $bom) = html_file_and_encoding($filename);
+  ($filehandle, $encoding, $bom)
+    = html_file_and_encoding($filename, \%options);
 
 This function (exported only by request) is just like C<html_file>,
 but returns more information.  In addition to the filehandle, it
@@ -75,6 +79,9 @@ returns the name of the encoding used, and a flag indicating whether a
 byte order mark was found (if C<$bom> is true, the file began with a
 BOM).  This may be useful if you want to write the file out again
 (especially in conjunction with the C<html_outfile> function).
+
+The optional second argument is a hashref containing options.  The
+possible keys are described under C<find_charset_in>.
 
 It dies if the file cannot be opened.  The result of calling it in
 scalar context is undefined.
@@ -88,7 +95,9 @@ scalar context is undefined.
 
 sub html_file_and_encoding
 {
-  my ($filename) = @_;
+  my ($filename, $options) = @_;
+
+  $options ||= {};
 
   open(my $in, '<:raw', $filename) or croak "Failed to open $filename: $!";
 
@@ -104,14 +113,16 @@ you set C<$IO::HTML::default_encoding> to C<undef>.
 
 =cut
 
-  my ($encoding, $bom) = sniff_encoding($in, $filename);
+  my ($encoding, $bom) = sniff_encoding($in, $filename, $options);
 
   if (not defined $encoding) {
     croak "No default encoding specified"
         unless defined($encoding = $default_encoding);
+    $encoding = find_encoding($encoding) if $options->{encoding};
   } # end if we didn't find an encoding
 
-  binmode $in, ":encoding($encoding):crlf";
+  binmode $in, sprintf(":encoding(%s):crlf",
+                       $options->{encoding} ? $encoding->name : $encoding);
 
   return ($in, $encoding, $bom);
 } # end html_file_and_encoding
@@ -124,6 +135,7 @@ you set C<$IO::HTML::default_encoding> to C<undef>.
 This function (exported only by request) opens C<$filename> for output
 using C<$encoding>, and writes a BOM to it if C<$bom> is true.
 If C<$encoding> is C<undef>, it defaults to C<$IO::HTML::default_encoding>.
+C<$encoding> may be either an encoding name or an Encode::Encoding object.
 
 It dies if the file cannot be opened.
 
@@ -137,6 +149,9 @@ sub html_outfile
     croak "No default encoding specified"
         unless defined($encoding = $default_encoding);
   } # end if we didn't find an encoding
+  elsif (ref $encoding) {
+    $encoding = $encoding->name;
+  }
 
   open(my $out, ">:encoding($encoding)", $filename)
       or croak "Failed to open $filename: $!";
@@ -149,13 +164,15 @@ sub html_outfile
 
 =sub sniff_encoding
 
-  ($encoding, $bom) = sniff_encoding($filehandle, $filename);
+  ($encoding, $bom) = sniff_encoding($filehandle, $filename, \%options);
 
 This function (exported only by request) runs the HTML5 encoding
 sniffing algorithm on C<$filehandle> (which must be seekable, and
 should have been opened in C<:raw> mode).  C<$filename> is used only
 for error messages (if there's a problem using the filehandle), and
-defaults to "file" if omitted.
+defaults to "file" if omitted.  The optional third argument is a
+hashref containing options.  The possible keys are described under
+C<find_charset_in>.
 
 It returns Perl's canonical name for the encoding, which is not
 necessarily the same as the MIME or IANA charset name.  It returns
@@ -177,9 +194,10 @@ that handle:
 
 sub sniff_encoding
 {
-  my ($in, $filename) = @_;
+  my ($in, $filename, $options) = @_;
 
   $filename = 'file' unless defined $filename;
+  $options ||= {};
 
   my $pos = tell $in;
   croak "Could not seek $filename: $!" if $pos < 0;
@@ -211,7 +229,7 @@ The specified file could not be rewound for the reason specified by C<$!>.
       $bom = 3;
       'utf-8-strict';
     } else {
-      find_charset_in($buf);    # check for <meta charset>
+      find_charset_in($buf, $options); # check for <meta charset>
     }
   }; # end $encoding
 
@@ -229,6 +247,10 @@ The specified file could not be rewound for the reason specified by C<$!>.
       $encoding = 'utf-8-strict';
     } # end if valid UTF-8 with at least one multi-byte character:
   } # end if testing for UTF-8
+
+  if (defined $encoding and $options->{encoding} and not ref $encoding) {
+    $encoding = find_encoding($encoding);
+  } # end if $encoding is a string and we want an object
 
   return wantarray ? ($encoding, $bom) : $encoding;
 } # end sniff_encoding
@@ -272,7 +294,7 @@ sub _get_charset_from_meta
 
 =sub find_charset_in
 
-  $encoding = find_charset_in($string_containing_HTML, [\%options]);
+  $encoding = find_charset_in($string_containing_HTML, \%options);
 
 This function (exported only by request) looks for charset information
 in a C<< <meta> >> tag in a possibly incomplete HTML document using
