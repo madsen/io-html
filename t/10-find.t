@@ -14,7 +14,7 @@ use Scalar::Util 'blessed';
 
 use IO::HTML 'find_charset_in';
 
-plan tests => 22;
+plan tests => 23;
 
 sub test
 {
@@ -117,6 +117,10 @@ test 'utf-8-strict', <<'', {need_pragma => 0}, 'need_pragma 0';
 <head>
 <meta http-equiv="X-Content-Type" content="text/html; charset=UTF-8" />
 <title>Title</title>
+
+test 'iso-8859-15' => <<'', 'bogus encoding';
+<meta charset="Totally-Bogus-Encoding-That-Doesnt-Exist">
+<meta charset=ISO-8859-15>
 
 {
   my $encoding = find_charset_in('<meta charset="UTF-8">', { encoding => 1 });
