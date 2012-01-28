@@ -48,7 +48,8 @@ our %EXPORT_TAGS = (
 This function (exported by default) is the primary entry point.  It
 opens the file specified by C<$filename> for reading, uses
 C<sniff_encoding> to find a suitable encoding layer, and applies it.
-It also applies the C<:crlf> layer.
+It also applies the C<:crlf> layer.  If the file begins with a BOM,
+the filehandle is positioned just after the BOM.
 
 The optional second argument is a hashref containing options.  The
 possible keys are described under C<find_charset_in>.
@@ -461,6 +462,15 @@ If the first 1024 bytes of the file contain a C<< <meta> >> tag that
 indicates the charset, and Encode recognizes the specified charset
 name, then that is the encoding.  (This portion of the algorithm is
 implemented by C<find_charset_in>.)
+
+The C<< <meta> >> tag can be in one of two formats:
+
+  <meta charset="...">
+  <meta http-equiv="Content-Type" content="...charset=...">
+
+The search is case-insensitive, and the order of attributes within the
+tag is irrelevant.  Any additional attributes of the tag are ignored.
+The first matching tag with a recognized encoding ends the search.
 
 =item 3.
 
