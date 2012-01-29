@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode qw(decode find_encoding);
 use Exporter 5.57 'import';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 our $default_encoding ||= 'cp1252';
@@ -186,7 +186,7 @@ loaded into a string, open an in-memory file on the string, and pass
 that handle:
 
   ($encoding, $bom) = do {
-    open(my $fh, '<:raw', \$string);  sniff_encoding($fh)
+    open(my $fh, '<', \$string);  sniff_encoding($fh)
   };
 
 (This only makes sense if C<utf8::is_utf8($string)> is false.)

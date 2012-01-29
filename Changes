@@ -1,4 +1,8 @@
 Revision history for IO-HTML
 
+0.02   NOT
+	- Fix 20-open.t to work on OpenBSD & Solaris
+	  (It seems they don't like <:raw on in-memory files.)
+
 0.01   January 28, 2012
 	- Initial release

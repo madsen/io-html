@@ -71,7 +71,7 @@ sub test
 
   # Test sniff_encoding:
   undef $mem;
-  open($mem, '<:raw', \$buf) or die;
+  open($mem, '<', \$buf) or die "Can't open in-memory file: $!";
 
   delete $options->{encoding} if $options;
 
