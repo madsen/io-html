@@ -1,5 +1,9 @@
 Revision history for IO-HTML
 
+0.03   NOT
+	- Fix 10-find.t to work on Perl 5.8.8
+	  (mime_name wasn't introduced until Encode 2.21; 5.8.8 has 2.12.)
+
 0.02   January 29, 2012
 	- Fix 20-open.t to work on OpenBSD & Solaris
 	  (It seems they don't like <:raw on in-memory files.)

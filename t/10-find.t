@@ -127,7 +127,7 @@ test 'iso-8859-15' => <<'', 'bogus encoding';
 
   ok(blessed($encoding), 'encoding is an object');
 
-  is(eval { $encoding->mime_name }, 'UTF-8', 'encoding is UTF-8');
+  is(eval { $encoding->name }, 'utf-8-strict', 'encoding is UTF-8');
 }
 
 done_testing;

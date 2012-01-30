@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode qw(decode find_encoding);
 use Exporter 5.57 'import';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 our $default_encoding ||= 'cp1252';
