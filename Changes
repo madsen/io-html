@@ -1,6 +1,6 @@
 Revision history for IO-HTML
 
-0.04   NOT
+0.04   February 4, 2012
 	- Require Encode 2.10 to get the utf-8-strict encoding.
 	  This is only an issue with Perl 5.8.6 and earlier.
 
