@@ -22,10 +22,10 @@ use strict;
 use warnings;
 
 use Carp 'croak';
-use Encode qw(decode find_encoding);
+use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 our $default_encoding ||= 'cp1252';
@@ -40,6 +40,14 @@ our %EXPORT_TAGS = (
 );
 
 #=====================================================================
+
+=head1 DEPENDENCIES
+
+IO::HTML has no non-core dependencies for Perl 5.8.7+.  With earlier
+versions of Perl 5.8, you need to upgrade L<Encode> to at least
+version {{ $meta{prereqs}{runtime}{requires}{Encode} // die }}, and
+you may need to upgrade L<Exporter> to at least version
+{{ $meta{prereqs}{runtime}{requires}{Exporter} // die }}.
 
 =sub html_file
 
