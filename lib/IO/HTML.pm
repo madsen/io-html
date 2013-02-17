@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 our $default_encoding ||= 'cp1252';
@@ -188,6 +188,10 @@ necessarily the same as the MIME or IANA charset name.  It returns
 C<undef> if the encoding cannot be determined.  C<$bom> is true if the
 file began with a byte order mark.  In scalar context, it returns only
 C<$encoding>.
+
+The filehandle's position is restored to its original position
+(normally the beginning of the file) unless C<$bom> is true.  In that
+case, the position is immediately after the BOM.
 
 Tip: If you want to run C<sniff_encoding> on a file you've already
 loaded into a string, open an in-memory file on the string, and pass
