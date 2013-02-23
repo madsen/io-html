@@ -201,7 +201,7 @@ that handle:
     open(my $fh, '<', \$string);  sniff_encoding($fh)
   };
 
-(This only makes sense if C<utf8::is_utf8($string)> is false.)
+(This only makes sense if C<$string> contains bytes, not characters.)
 
 =cut
 
