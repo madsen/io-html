@@ -1,6 +1,6 @@
 Revision history for IO-HTML
 
-1.00   NOT
+1.00   February 23, 2013
 	- No code changes, just documentation improvements
 	- Document filehandle position set by sniff_encoding
 
