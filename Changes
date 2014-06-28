@@ -1,5 +1,8 @@
 Revision history for IO-HTML
 
+1.001  NOT
+	- Update links to the HTML5 draft specification
+
 1.00   2013-02-23
 	- No code changes, just documentation improvements
 	- Document filehandle position set by sniff_encoding

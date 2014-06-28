@@ -1,7 +1,7 @@
 #---------------------------------------------------------------------
 package IO::HTML;
 #
-# Copyright 2012 Christopher J. Madsen
+# Copyright {{ $zilla->copyright_year }} Christopher J. Madsen
 #
 # Author: Christopher J. Madsen <perl@cjmweb.net>
 # Created: 14 Jan 2012
@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '1.00';
+our $VERSION = '1.001';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 our $default_encoding ||= 'cp1252';
@@ -269,7 +269,7 @@ The specified file could not be rewound for the reason specified by C<$!>.
 } # end sniff_encoding
 
 #=====================================================================
-# Based on HTML5 8.2.2.1 Determining the character encoding:
+# Based on HTML5 8.2.2.2 Determining the character encoding:
 
 # Get attribute from current position of $_
 sub _get_attribute
@@ -457,7 +457,7 @@ __END__
 
 IO::HTML provides an easy way to open a file containing HTML while
 automatically determining its encoding.  It uses the HTML5 encoding
-sniffing algorithm specified in section 8.2.2.1 of the draft standard.
+sniffing algorithm specified in section 8.2.2.2 of the draft standard.
 
 The algorithm as implemented here is:
 
@@ -502,5 +502,5 @@ that.
 
 =head1 SEE ALSO
 
-The HTML5 specification, section 8.2.2.1 Determining the character encoding:
-L<http://www.w3.org/TR/html5/parsing.html#determining-the-character-encoding>
+The HTML5 specification, section 8.2.2.2 Determining the character encoding:
+L<http://www.w3.org/TR/html5/syntax.html#determining-the-character-encoding>
