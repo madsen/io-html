@@ -25,9 +25,43 @@ use Carp 'croak';
 use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '1.001';
+our $VERSION = '1.002'; # TRIAL VERSION
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
+=head1 CONFIGURATION AND ENVIRONMENT
+
+There are two global variables that affect IO::HTML.  If you need to
+change them, you should do so using C<local> if possible:
+
+  my $file = do {
+    # This file may define the charset later in the header
+    local $IO::HTML::bytes_to_check = 4096;
+    html_file(...);
+  };
+
+=over
+
+=item C<$bytes_to_check>
+
+This is the number of bytes that C<sniff_encoding> will read from the
+stream.  It is also the number of bytes that C<find_charset_in> will
+search for a C<< <meta> >> tag containing charset information.
+It must be a positive integer.
+
+The HTML 5 specification recommends using the default value of 1024,
+but some pages do not follow the specification.
+
+=item C<$default_encoding>
+
+This is the encoding that C<html_file> and C<html_file_and_encoding>
+will use if no encoding can be detected by C<sniff_encoding>.
+The default value is C<cp1252> (a.k.a. Windows-1252).
+
+=back
+
+=cut
+
+our $bytes_to_check   ||= 1024;
 our $default_encoding ||= 'cp1252';
 
 our @EXPORT    = qw(html_file);
@@ -215,7 +249,8 @@ sub sniff_encoding
   my $pos = tell $in;
   croak "Could not seek $filename: $!" if $pos < 0;
 
-  croak "Could not read $filename: $!" unless defined read $in, my $buf, 1024;
+  croak "Could not read $filename: $!"
+      unless defined read $in, my($buf), $bytes_to_check;
 
   seek $in, $pos, 0 or croak "Could not seek $filename: $!";
 
@@ -312,7 +347,7 @@ sub _get_charset_from_meta
 This function (exported only by request) looks for charset information
 in a C<< <meta> >> tag in a possibly incomplete HTML document using
 the "two step" algorithm specified by HTML5.  It does not look for a BOM.
-Only the first 1024 bytes of the string are checked.
+Only the first C<$bytes_to_check> bytes of the string are checked.
 
 It returns Perl's canonical name for the encoding, which is not
 necessarily the same as the MIME or IANA charset name.  It returns
@@ -344,7 +379,8 @@ sub find_charset_in
 {
   for (shift) {
     my $options = shift || {};
-    my $stop = length > 1024 ? 1024 : length; # search first 1024 bytes
+    # search only the first $bytes_to_check bytes (default 1024)
+    my $stop = length > $bytes_to_check ? $bytes_to_check : length;
 
     my $expect_pragma = (defined $options->{need_pragma}
                          ? $options->{need_pragma} : 1);
@@ -470,7 +506,7 @@ UTF-16BE, or UTF-8, then that is the encoding.
 
 =item 2.
 
-If the first 1024 bytes of the file contain a C<< <meta> >> tag that
+If the first C<$bytes_to_check> bytes of the file contain a C<< <meta> >> tag that
 indicates the charset, and Encode recognizes the specified charset
 name, then that is the encoding.  (This portion of the algorithm is
 implemented by C<find_charset_in>.)
@@ -486,7 +522,7 @@ The first matching tag with a recognized encoding ends the search.
 
 =item 3.
 
-If the first 1024 bytes of the file are valid UTF-8 (with at least 1
+If the first C<$bytes_to_check> bytes of the file are valid UTF-8 (with at least 1
 non-ASCII character), then the encoding is UTF-8.
 
 =item 4.

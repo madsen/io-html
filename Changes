@@ -1,5 +1,8 @@
 Revision history for IO-HTML
 
+1.002  NOT
+	- Add $bytes_to_check configuration variable (GitHub#1)
+
 1.001  2014-06-28
 	- No code changes, just documentation improvements
 	- Update links to the HTML5 draft specification
