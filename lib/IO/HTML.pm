@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '1.002'; # TRIAL VERSION
+our $VERSION = '1.003'; # TRIAL VERSION
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 =head1 CONFIGURATION AND ENVIRONMENT
@@ -315,11 +315,22 @@ sub _get_attribute
 
   my ($name, $value) = (lc $1, '');
 
-  if (/\G[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/gc
-      and (/\G"([^"]*)"?/gc or
-           /\G'([^']*)'?/gc or
-           /\G([^\x09\x0A\x0C\x0D >]*)/gc)) {
-    $value = lc $1;
+  if (/\G[\x09\x0A\x0C\x0D ]*=[\x09\x0A\x0C\x0D ]*/gc) {
+    if (/\G"/gc) {
+      # Double-quoted attribute value
+      /\G([^"]*)("?)/gc;
+      return unless $2; # Incomplete attribute (missing closing quote)
+      $value = lc $1;
+    } elsif (/\G'/gc) {
+      # Single-quoted attribute value
+      /\G([^']*)('?)/gc;
+      return unless $2; # Incomplete attribute (missing closing quote)
+      $value = lc $1;
+    } else {
+      # Unquoted attribute value
+      /\G([^\x09\x0A\x0C\x0D >]*)/gc;
+      $value = lc $1;
+    }
   } # end if attribute has value
 
   return wantarray ? ($name, $value) : 1;
@@ -347,7 +358,8 @@ sub _get_charset_from_meta
 This function (exported only by request) looks for charset information
 in a C<< <meta> >> tag in a possibly incomplete HTML document using
 the "two step" algorithm specified by HTML5.  It does not look for a BOM.
-Only the first C<$bytes_to_check> bytes of the string are checked.
+The C<< <meta> >> tag must begin within the first C<$bytes_to_check>
+bytes of the string.
 
 It returns Perl's canonical name for the encoding, which is not
 necessarily the same as the MIME or IANA charset name.  It returns
