@@ -5,6 +5,7 @@ Revision history for IO-HTML
 	  If we reach the end of the string without finding the closing quote,
 	  terminate processing instead of using whatever we did collect as
 	  the attribute's value.
+	- Add tests for the $bytes_to_check configuration variable (GitHub#1)
 
 1.002  2015-09-19 Trial Release
 	- Add $bytes_to_check configuration variable (GitHub#1)
