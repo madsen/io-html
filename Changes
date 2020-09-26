@@ -1,7 +1,8 @@
 Revision history for IO-HTML
 
-1.004  NOT
-	- No code changes, just documentation improvements
+1.004  2020-09-26
+	- No code changes since 1.003, just documentation improvements
+	- New example file: detect-encoding.pl
 
 1.003  2015-09-26 Trial Release
 	- Do not use incomplete quoted attribute values in find_charset_in.
