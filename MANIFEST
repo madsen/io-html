@@ -5,6 +5,7 @@ META.json
 META.yml
 Makefile.PL
 README
+examples/detect-encoding.pl
 lib/IO/HTML.pm
 t/00-all_prereqs.t
 t/00-load.t
