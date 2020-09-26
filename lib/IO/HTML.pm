@@ -25,7 +25,7 @@ use Carp 'croak';
 use Encode 2.10 qw(decode find_encoding); # need utf-8-strict encoding
 use Exporter 5.57 'import';
 
-our $VERSION = '1.003'; # TRIAL VERSION
+our $VERSION = '1.004';
 # This file is part of {{$dist}} {{$dist_version}} ({{$date}})
 
 =head1 CONFIGURATION AND ENVIRONMENT
@@ -56,6 +56,10 @@ but some pages do not follow the specification.
 This is the encoding that C<html_file> and C<html_file_and_encoding>
 will use if no encoding can be detected by C<sniff_encoding>.
 The default value is C<cp1252> (a.k.a. Windows-1252).
+
+Setting it to C<undef> will cause the file subroutines to croak if
+C<sniff_encoding> fails to determine the encoding.  (C<sniff_encoding>
+itself does not use C<$default_encoding>).
 
 =back
 
@@ -102,7 +106,9 @@ to C<$IO::HTML::default_encoding>, which is set to C<cp1252>
 default should be locale dependent, but that is not currently
 implemented.
 
-It dies if the file cannot be opened.
+It dies if the file cannot be opened, or if C<sniff_encoding> cannot
+determine the encoding and C<$IO::HTML::default_encoding> has been set
+to C<undef>.
 
 =cut
 
@@ -126,8 +132,12 @@ BOM).  This may be useful if you want to write the file out again
 The optional second argument is a hashref containing options.  The
 possible keys are described under C<find_charset_in>.
 
-It dies if the file cannot be opened.  The result of calling it in
-scalar context is undefined.
+It dies if the file cannot be opened, or if C<sniff_encoding> cannot
+determine the encoding and C<$IO::HTML::default_encoding> has been set
+to C<undef>.
+
+The result of calling C<html_file_and_encoding> in scalar context is undefined
+(in the C sense of there is no guarantee what you'll get).
 
 =cut
 
@@ -180,7 +190,8 @@ using C<$encoding>, and writes a BOM to it if C<$bom> is true.
 If C<$encoding> is C<undef>, it defaults to C<$IO::HTML::default_encoding>.
 C<$encoding> may be either an encoding name or an Encode::Encoding object.
 
-It dies if the file cannot be opened.
+It dies if the file cannot be opened, or if both C<$encoding> and
+C<$IO::HTML::default_encoding> are C<undef>.
 
 =cut
 
@@ -356,9 +367,9 @@ sub _get_charset_from_meta
   $encoding = find_charset_in($string_containing_HTML, \%options);
 
 This function (exported only by request) looks for charset information
-in a C<< <meta> >> tag in a possibly incomplete HTML document using
+in a C<< <meta> >> tag in a possibly-incomplete HTML document using
 the "two step" algorithm specified by HTML5.  It does not look for a BOM.
-The C<< <meta> >> tag must begin within the first C<$bytes_to_check>
+The C<< <meta> >> tag must begin within the first C<$IO::HTML::bytes_to_check>
 bytes of the string.
 
 It returns Perl's canonical name for the encoding, which is not

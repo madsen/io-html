@@ -1,5 +1,8 @@
 Revision history for IO-HTML
 
+1.004  NOT
+	- No code changes, just documentation improvements
+
 1.003  2015-09-26 Trial Release
 	- Do not use incomplete quoted attribute values in find_charset_in.
 	  If we reach the end of the string without finding the closing quote,
